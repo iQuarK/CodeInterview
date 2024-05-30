@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -20,12 +21,29 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/assets", func(c *gin.Context) {
+		pNumber := c.DefaultQuery("pageNumber", "1")
+		pSize := c.DefaultQuery("pageSize", "10")
 		host := c.Query("host")
+
+		pageNumber, err := strconv.Atoi(pNumber)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		pageSize, err := strconv.Atoi(pSize)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		print("pageNumber", pageNumber)
+
+		print("pageSize", pageSize)
 		var rows *sql.Rows
 		if host != "" {
-			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ?", "%"+host+"%")
+			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ? LIMIT ? OFFSET ?", "%"+host+"%", pageSize, (pageNumber-1)*pageSize)
 		} else {
-			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets")
+			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets LIMIT ? OFFSET ?", pageSize, (pageNumber-1)*pageSize)
 		}
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
