@@ -30,7 +30,7 @@ export default function InfiniteScroll({count, data, doSearch, getNextPage, isLo
       const { scrollTop, scrollHeight, offsetHeight } = event.currentTarget;
       const scrollRatio = (scrollTop / (scrollHeight- offsetHeight)) * 100;
 
-      if (scrollRatio > 75 && !isLoading && scrollEnabled) {
+      if (scrollRatio > 70 && !isLoading && scrollEnabled) {
         getNextPage();
       }
     };
