@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useState }  from 'react';
 import '@/lib/env';
 
+import { addToLocalStorage, getFromLocalStorage } from '@/lib/helper';
+
 import InfiniteScroll from '@/components/infinite-scroll/InfiniteScroll';
 
 import Logo from '~/svg/Logo.svg';
@@ -54,18 +56,28 @@ export default function HomePage() {
   
   const getAssets = useCallback((pageNumber: number, pageSize:number, host:string): Promise<Data[]> => {
     return new Promise((resolve,reject) => {
-      fetch(`/api/assets?pageNumber=${pageNumber}&pageSize=${pageSize}&host=${host}`)
-        .then(response => response.json())
-        .then((dataJson: Data) => {
-          if (dataJson.assets) {
-          const newData: Data[] = [ ...data ];
-            newData[dataJson.page] = dataJson;
-            setData(newData);
-            resolve(newData);
-          } else {
-            resolve(data);
-          }
-        }).catch((reason) => reject(reason))
+      const updateData = (dataJson: Data) => {
+        if (dataJson.assets) {
+        const newData: Data[] = [ ...data ];
+          newData[dataJson.page] = dataJson;
+          setData(newData);
+          resolve(newData);
+        } else {
+          resolve(data);
+        }
+      };
+      const cached = getFromLocalStorage(`${host}-${pageSize}-${pageNumber}`);
+
+      if (cached !== null) {
+        updateData(JSON.parse(cached));
+      } else {
+        fetch(`/api/assets?pageNumber=${pageNumber}&pageSize=${pageSize}&host=${host}`)
+          .then(response => response.json())
+          .then((dataJson: Data) => {
+            addToLocalStorage(`${host}-${pageSize}-${pageNumber}`, JSON.stringify(dataJson));
+            updateData(dataJson);
+          }).catch((reason) => reject(reason));
+      }
     });
   }, [data]);
 
@@ -78,6 +90,7 @@ export default function HomePage() {
   const getPage = useCallback((pageNumber = 1, host = ''): Promise<[number, Data[]]> => {
     setLoading(true);
     setCurrentPage(pageNumber);
+
     reserveSpace(pageNumber, pageSize);
     return Promise.all([getCount(host), getAssets(pageNumber, pageSize, host)])
       .finally(() => {
