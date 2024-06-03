@@ -49,11 +49,6 @@ export default function Pagination({data, count, getData, isLoading}: Pagination
           <div className='mt-2 text-sm text-gray-800'>
              <div>
                 Filters: 
-               {/* <select name="page-size" onChange={(evt) => setPageSize(Number(evt.target.value))}>
-                    <option value="10" selected={pageSize === 10}>10</option>
-                    <option value="25" selected={pageSize === 25}>25</option>
-                    <option value="50" selected={pageSize === 50}>50</option>
-                </select> */}
                 Host: <input type="text" value={host} onChange={(event) => setHost(event.target.value)} />
             </div>
             {
