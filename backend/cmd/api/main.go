@@ -9,6 +9,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Response struct {
+	Page   int                      `json:"page"`
+	Assets []map[string]interface{} `json:"assets"`
+}
+
 const dbFileName = "assets.db"
 
 func main() {
@@ -36,10 +41,9 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		print("pageNumber", pageNumber)
 
-		print("pageSize", pageSize)
 		var rows *sql.Rows
+
 		if host != "" {
 			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ? LIMIT ? OFFSET ?", "%"+host+"%", pageSize, (pageNumber-1)*pageSize)
 		} else {
@@ -68,12 +72,17 @@ func main() {
 			})
 		}
 
-		c.JSON(http.StatusOK, assets)
+		var response Response
+		response.Assets = assets
+		response.Page = pageNumber
+
+		c.JSON(http.StatusOK, response)
 	})
 
 	router.GET("/assets/count", func(c *gin.Context) {
+		host := c.Query("host")
 		var count int
-		err := db.QueryRow("SELECT COUNT(*) FROM assets").Scan(&count)
+		err := db.QueryRow("SELECT COUNT(*) FROM assets WHERE host LIKE ?", "%"+host+"%").Scan(&count)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

@@ -58,8 +58,8 @@ export default function Pagination({data, count, getData, isLoading}: Pagination
             </div>
             {
               data
-                .map((item: {comment: string; owner: string; id: number;}) => 
-                  <Comment key={item.id} comment={item.comment} owner={item.owner} />)
+                .map((item: Asset) => 
+                  <Comment key={item.id} asset={item} />)
             }
             <PaginationFooter />
           </div>
