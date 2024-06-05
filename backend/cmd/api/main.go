@@ -45,10 +45,29 @@ func main() {
 		var rows *sql.Rows
 
 		if host != "" {
-			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ? LIMIT ? OFFSET ?", "%"+host+"%", pageSize, (pageNumber-1)*pageSize)
+			stmt, er := db.Prepare("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ? LIMIT ? OFFSET ?")
+
+			if er != nil {
+				c.JSON(400, gin.H{"error": er.Error()})
+				return
+			}
+
+			like := "%"+host+"%"
+			offset := (pageNumber-1)*pageSize
+			rows, err = stmt.Query(&like, &pageSize, &offset)
 		} else {
-			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets LIMIT ? OFFSET ?", pageSize, (pageNumber-1)*pageSize)
+			stmt, er := db.Prepare("SELECT id, host, comment, ip, owner FROM assets LIMIT ? OFFSET ?")
+			
+			if er != nil {
+				c.JSON(400, gin.H{"error": er.Error()})
+				return
+
+			}
+
+			offset := (pageNumber-1)*pageSize
+			rows, err = stmt.Query(&pageSize, &offset)
 		}
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
